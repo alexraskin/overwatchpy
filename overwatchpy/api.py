@@ -17,6 +17,7 @@ logger.setLevel(logging.DEBUG)
 
 __version__: str = "0.0.1"
 
+
 class EndPoint(Enum):
     domain: str = "overfast-api.tekrop.fr"
     scheme: str = "https"
@@ -81,6 +82,33 @@ class Client:
     ) -> Callable[[dict], OverwatchAPIError]:
         """
         Wrapper around requests.request()
+
+        Parameters
+        ----------
+        path : str
+          The path
+        method : str
+          default: "GET"
+          The HTTP method
+        params : dict
+          default: None
+          The query parameters
+        headers : dict
+          default: None
+          The headers
+        raw : bool
+          default: False
+          Whether to return the raw response
+        allow_redirects : bool
+          default: True
+          Whether to allow redirects
+        timeout : int
+          default: None
+          The timeout for the request
+
+        returns
+        -------
+        Callable[[dict], OverwatchAPIError]
         """
         if not headers:
             headers: dict = {}

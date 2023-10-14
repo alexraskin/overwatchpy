@@ -1,6 +1,6 @@
 [tool.poetry]
 name = "overwatchpy"
-version = "0.0.2"
+version = "0.0.3"
 description = "Python wrapper for Overwatch API"
 authors = ["alexraskin <alexgithub@fastmail.fm>"]
 readme = "README.md"

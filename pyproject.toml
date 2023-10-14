@@ -1,11 +1,10 @@
 [tool.poetry]
 name = "overwatchpy"
-version = "0.0.1"
+version = "0.0.2"
 description = "Python wrapper for Overwatch API"
 authors = ["alexraskin <alexgithub@fastmail.fm>"]
 readme = "README.md"
 packages = [{include = "overwatchpy"}]
-home-page = "https://github.com/alexraskin/overwatchpy"
 
 [tool.poetry.dependencies]
 python = "^3.11"

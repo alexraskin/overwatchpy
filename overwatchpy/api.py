@@ -15,7 +15,7 @@ logger = logging.getLogger(__name__)
 logger.addHandler(logging.NullHandler())
 logger.setLevel(logging.DEBUG)
 
-__version__: str = "0.0.1"
+__version__: str = "0.0.2"
 
 
 class EndPoint(Enum):

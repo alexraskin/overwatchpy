@@ -9,15 +9,31 @@ Welcome to overwatchpy's documentation!
 .. toctree::
    :maxdepth: 2
    :caption: Contents:
-
-    overwatchpy
     
 
+Installation
+============
+.. code-block:: bash
 
+    pip install overwatchpy
 
-Indices and tables
-==================
+Usage
+=====
+.. code-block:: python
+  from overwatchpy import Overwatch
 
-* :ref:`genindex`
-* :ref:`modindex`
-* :ref:`search`
+  search: Overwatch.player_search = Overwatch.player_search("twizy", "quickplay", "pc", "public")
+
+  for player in search:
+      print(player.name)
+
+  client = Overwatch()
+
+  heros = client.heroes(role="tank")
+  for hero in heros:
+    print(hero.name)
+
+  game_modes = client.gamemodes()
+  for game_mode in game_modes:
+    print(game_mode.name)
+    print(game_mode.description)

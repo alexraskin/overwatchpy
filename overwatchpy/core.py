@@ -1,5 +1,6 @@
 from __future__ import absolute_import
 
+import subprocess
 import logging
 import re
 from typing import Callable, Literal, Optional
@@ -19,6 +20,17 @@ from .errors import (
     PlatformNotRecognized,
 )
 
+from .objects import (
+    OverwatchHeros,
+    OverwatchHero,
+    OverwatchMaps,
+    OverwatchRole,
+    OverwatchGameModes,
+    OverwatchPlayerSearch,
+    PlayerProfileSummary,
+    OverwatchPlayerStats,
+)
+
 logger = logging.getLogger(__name__)
 logger.addHandler(logging.NullHandler())
 
@@ -28,13 +40,7 @@ __version__ = "0.0.1"
 class Overwatch(Client):
     client = Client()
 
-    def __init__(
-        self,
-        battletag: str = None,
-        gamemode: Literal["quickplay", "competitive"] = None,
-        platform: Literal["pc", "console"] = None,
-        _data: Optional[dict] = None,
-    ) -> None:
+    def __init__(self,) -> None:
         """
         Parameters
         ----------
@@ -48,14 +54,6 @@ class Overwatch(Client):
           The data from the API
         """
         super().__init__()
-        self.battletag = battletag
-        self.gamemode = gamemode
-        self.platform = platform
-        if _data is not None:
-            self._data = _data
-            self.battletag = _data.get("player_id")
-            self.privacy = _data.get("privacy")
-            self.name = _data.get("name")
 
     def battle_tag_check(self, battletag: str) -> bool:
         """
@@ -65,7 +63,7 @@ class Overwatch(Client):
         ----------
         battletag : str
           The player's battletag
-        
+
         returns
         -------
         bool : bool
@@ -73,19 +71,8 @@ class Overwatch(Client):
         reg = r"^[a-zA-Z0-9]{3,12}#[0-9]{4,5}$"
         return bool(re.match(reg, battletag))
 
-    def ping(self) -> Callable[[dict], OverwatchAPIError]:
-        """
-        Returns the ping
-
-        returns
-        -------
-        Callable[[dict], OverwatchAPIError]
-        """
-        return self.client.request(EndPoint.api_base.value)
-
-    @classmethod
     def player_search(
-        cls,
+        self,
         battletag: str,
         gamemode: Literal["quickplay", "competitive"],
         platform: Literal["pc", "console"],
@@ -102,7 +89,7 @@ class Overwatch(Client):
         ] = "name:asc",
         offset: Optional[int] = 0,
         limit: Optional[int] = 20,
-    ) -> Callable[[dict], OverwatchAPIError]:
+    ) -> Callable[[OverwatchPlayerSearch], OverwatchAPIError]:
         """
         Search for a player
 
@@ -123,7 +110,7 @@ class Overwatch(Client):
         limit : int
           The limit
         """
-        if not cls.battle_tag_check(battletag):
+        if not self.battle_tag_check(battletag):
             raise InvalidBattletag("Invalid battletag")
 
         if privacy not in ["public", "private"]:
@@ -155,15 +142,25 @@ class Overwatch(Client):
             "offset": offset,
             "limit": limit,
         }
-        response = cls.client.request(
+        response = self.client.request(
             path=EndPoint.player_url.value, params=urlencode(params)
         )
 
-        return [cls(_data=data) for data in response["results"]]
+        return [OverwatchPlayerSearch(response) for response in response]
+
+    def ping(self) -> Callable[[dict], OverwatchAPIError]:
+        """
+        Returns the ping
+
+        returns
+        -------
+        Callable[[dict], OverwatchAPIError]
+        """
+        return self.client.request(EndPoint.api_base.value)
 
     def player_summary(
         self, battletag: Optional[str] = None
-    ) -> Callable[[dict], OverwatchAPIError]:
+    ) -> Callable[[PlayerProfileSummary], OverwatchAPIError]:
         """
         Returns the player's summary
 
@@ -171,7 +168,7 @@ class Overwatch(Client):
         ----------
         battletag : str
           The player's battletag
-        
+
         returns
         -------
         Callable[[dict], OverwatchAPIError]
@@ -179,12 +176,13 @@ class Overwatch(Client):
         if self.battle_tag_check(battletag):
             raise InvalidBattletag("Invalid battletag")
         if battletag is None:
-            battletag = self.battletag
-        return self.client.request(
+            raise InvalidBattletag("Battletag is required")
+        response = self.client.request(
             EndPoint.player_summary_url.value.format(battletag=battletag)
         )
+        return PlayerProfileSummary(**response)
 
-    def player_all_data(
+    def all_player_data(
         self, battletag: Optional[str] = None
     ) -> Callable[[dict], OverwatchAPIError]:
         """
@@ -194,7 +192,7 @@ class Overwatch(Client):
         ----------
         battletag : str
           The player's battletag
-        
+
         returns
         -------
         Callable[[dict], OverwatchAPIError]
@@ -202,17 +200,18 @@ class Overwatch(Client):
         if self.battle_tag_check(battletag):
             raise InvalidBattletag("Invalid battletag")
         if battletag is None:
-            battletag = self.battletag
-        return self.client.request(
+            raise InvalidBattletag("Battletag is required")
+        response = self.client.request(
             EndPoint.domain.all_player_data_url.value.format(battletag=self.battletag)
         )
+        return response # build a class for this response
 
     def player_stats(
         self,
         battletag: Optional[str] = None,
-        gamemode: Optional[Literal] = None,
+        gamemode: Optional[Literal["quickplay", "competitive"]] = None,
         platform: Optional[Literal["pc", "console"]] = None,
-    ) -> Callable[[dict], OverwatchAPIError]:
+    ) -> Callable[[OverwatchPlayerStats], OverwatchAPIError]:
         """
         Returns the player's stats
 
@@ -224,7 +223,7 @@ class Overwatch(Client):
           The gamemode
         platform : str
           The platform
-        
+
         returns
         -------
         Callable[[dict], OverwatchAPIError]
@@ -232,26 +231,27 @@ class Overwatch(Client):
         if self.battle_tag_check(battletag):
             raise InvalidBattletag("Invalid battletag")
         if battletag is None:
-            battletag = self.battletag
+            raise InvalidBattletag("Battletag is required")
         if gamemode is None:
-            gamemode = self.gamemode
+            raise InvalidGamemode("Gamemode is required")
         if platform is None:
-            platform = self.platform
+            raise PlatformNotRecognized("Platform is required")
         params = {
             "gamemode": gamemode,
             "platform": platform,
         }
-        return self.client.request(
+        response = self.client.request(
             EndPoint.player_stats_summary_url.value.format(battletag=battletag),
             params=urlencode(params),
         )
+        return OverwatchPlayerStats(**response)
 
     def player_career(
         self,
-        hero: Optional[Literal["all-heros"]] = "all-heros",
+        hero: Optional[str] = "all-heros",
         battletag: Optional[str] = None,
-        gamemode: Optional[str] = None,
-        platform: Optional[str] = "pc",
+        gamemode: Optional[Literal["quickplay", "competitive"]] = None,
+        platform: Optional[Literal["pc", "console"]] = None,
     ) -> Callable[[dict], OverwatchAPIError]:
         """
         Returns the player's career
@@ -266,7 +266,7 @@ class Overwatch(Client):
           The gamemode
         platform : str
           The platform
-        
+
         returns
         -------
         Callable[[dict], OverwatchAPIError]
@@ -274,11 +274,11 @@ class Overwatch(Client):
         if self.battle_tag_check(battletag):
             raise InvalidBattletag("Invalid battletag")
         if battletag is None:
-            battletag = self.battletag
+            raise InvalidBattletag("Battletag is required")
         if gamemode is None:
-            gamemode = self.gamemode
+            raise InvalidGamemode("Gamemode is required")
         if platform is None:
-            platform = self.platform
+            raise PlatformNotRecognized("Platform is required")
         params = {
             "gamemode": gamemode,
             "platform": platform,
@@ -288,8 +288,19 @@ class Overwatch(Client):
             EndPoint.player_career_url.value.format(battletag=battletag),
             params=urlencode(params),
         )
+    
+    def roles(self) -> Callable[[OverwatchRole], OverwatchAPIError]:
+        """
+        Returns the roles
 
-    def maps(self) -> Callable[[dict], OverwatchAPIError]:
+        returns
+        -------
+        Callable[[dict], OverwatchAPIError]
+        """
+        response = self.client.request(EndPoint.roles_url.value)
+        return [OverwatchRole(**response) for response in response]
+
+    def maps(self) -> Callable[[OverwatchMaps], OverwatchAPIError]:
         """
         Returns the maps
 
@@ -297,19 +308,21 @@ class Overwatch(Client):
         -------
         Callable[[dict], OverwatchAPIError]
         """
-        return self.client.request(EndPoint.map_url.value)
+        response = self.client.request(EndPoint.map_url.value)
+        return [OverwatchMaps(**response) for response in response]
 
-    def gamemodes(self) -> Callable[[dict], OverwatchAPIError]:
+    def gamemodes(self) -> Callable[[OverwatchGameModes], OverwatchAPIError]:
         """
         Returns the gamemodes
         """
-        return self.client.request(EndPoint.gamemodes_url.value)
+        response = self.client.request(EndPoint.gamemodes_url.value)
+        return [OverwatchGameModes(**response) for response in response]
 
     def heroes(
         self,
-        role: Literal["damage", "support", "tank"],
+        role: Literal["damage", "support", "tank"] = None,
         locale: Optional[str] = "en-us",
-    ) -> Callable[[dict], OverwatchAPIError]:
+    ) -> Callable[[OverwatchHeros], OverwatchAPIError]:
         """
         Returns the heroes
 
@@ -319,15 +332,19 @@ class Overwatch(Client):
           The role
         locale : str
           The locale (default: en-us)
-        
+
         returns
         -------
         Callable[[dict], OverwatchAPIError]
         """
-        if role not in ["damage", "support", "tank"]:
-            raise InvalidGamemode("Role must be either 'damage', 'support', 'tank'")
         params = {
-            "role": role,
             "locale": locale if locale in self.local else "en-us",
         }
-        return self.client.request(EndPoint.heroes_url.value, params=urlencode(params))
+        if role is not None:
+            params["role"] = role
+            if role not in ["damage", "support", "tank"]:
+                raise InvalidGamemode("Role must be either 'damage', 'support', 'tank'")
+        response = self.client.request(
+            EndPoint.heroes_url.value, params=urlencode(params)
+        )
+        return [OverwatchHeros(**response) for response in response]

@@ -27,9 +27,16 @@ search: Overwatch.player_search = Overwatch.player_search("twizy", "quickplay", 
 for player in search:
     print(player.name)
 
-ow = Overwatch(battletag="Twizy#11358", gamemode="quickplay", platform="pc")
+client = Overwatch()
 
-print(ow.maps())
+heros = client.heroes(role="tank")
+for hero in heros:
+  print(hero.name)
+
+game_modes = client.gamemodes()
+for game_mode in game_modes:
+  print(game_mode.name)
+  print(game_mode.description)
 ```
 
 ## License

@@ -5,6 +5,7 @@ class BaseClass:
     def __init__(self) -> None:
         ...
 
+
 class Ping(BaseClass):
     def __init__(self, ping: int) -> None:
         super().__init__()
@@ -12,6 +13,7 @@ class Ping(BaseClass):
 
     def __str__(self) -> str:
         return f"Ping: {self.ping}"
+
 
 class OverwatchHeros(BaseClass):
     def __init__(self, key: str, name: str, portrait: str, role: str):
@@ -108,6 +110,25 @@ class OverwatchPlayerSearch(BaseClass):
         return f"Total Results: {self.total}\nResults: {self.results}"
 
 
+class AllPlayerStats(BaseClass):
+    def __init__(self, **kwargs) -> None:
+        super().__init__()
+        self.data = kwargs
+
+    def __str__(self) -> str:
+        return f"Data: {self.data}"
+
+    @classmethod
+    def parse(cls, data: Dict[str, Any]) -> "AllPlayerStats":
+        return cls(**data)
+
+    def get(self, key: str) -> Any:
+        return getattr(self, key, None)
+
+    def __getitem__(self, key: str) -> Any:
+        return self.get(key)
+
+
 class PlayerProfileSummary(BaseClass):
     def __init__(
         self,
@@ -118,7 +139,7 @@ class PlayerProfileSummary(BaseClass):
         endorsement: Dict[str, str],
         competitive: Dict[str, Dict[str, Any]],
         privacy: str,
-    ):  
+    ):
         super().__init__()
         self.username: str = username
         self.avatar: str = avatar
@@ -136,8 +157,12 @@ class OverwatchPlayerStats(BaseClass):
     def __init__(self, data: Dict[str, Any]) -> None:
         super().__init__()
         self.general = self.GeneralStats(data["general"])
-        self.heroes = {hero: self.HeroStats(stats) for hero, stats in data["heroes"].items()}
-        self.roles = {role: self.RoleStats(stats) for role, stats in data["roles"].items()}
+        self.heroes = {
+            hero: self.HeroStats(stats) for hero, stats in data["heroes"].items()
+        }
+        self.roles = {
+            role: self.RoleStats(stats) for role, stats in data["roles"].items()
+        }
 
     class OverwatchGeneralStats:
         def __init__(self, data: Dict[str, Any]) -> None:

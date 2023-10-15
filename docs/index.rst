@@ -15,7 +15,7 @@ Installation
 ============
 .. code-block:: bash
 
-    pip install overwatchpy
+  pip install overwatchpy
 
 Usage
 =====

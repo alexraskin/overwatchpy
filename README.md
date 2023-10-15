@@ -31,12 +31,11 @@ client = Overwatch()
 
 heros = client.heroes(role="tank")
 for hero in heros:
-  print(hero.name)
+    print(hero.name)
 
-game_modes = client.gamemodes()
-for game_mode in game_modes:
-  print(game_mode.name)
-  print(game_mode.description)
+player = client.all_player_data(battletag="TeKrop#2217")
+
+print(player.data)
 ```
 
 ## License

@@ -11,11 +11,11 @@ from requests.packages.urllib3.util.retry import Retry
 from .const import locale
 from .errors import OverwatchAPIError
 
+__version__ = "0.0.4"
+
 logger = logging.getLogger(__name__)
 logger.addHandler(logging.NullHandler())
 logger.setLevel(logging.DEBUG)
-
-__version__: str = "0.0.3"
 
 
 class EndPoint(Enum):

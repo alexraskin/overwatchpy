@@ -83,7 +83,7 @@ class Overwatch(Client):
         -------
         bool : bool
         """
-        reg = r"^[a-zA-Z0-9]{3,12}#[0-9]{4,5}$"
+        reg = r"^[a-zA-Z0-9]{3,12}#[0-9]{4,6}$"
         return bool(re.match(reg, battletag))
 
     def player_search(
@@ -227,8 +227,6 @@ class Overwatch(Client):
         """
         if battletag is None:
             raise InvalidBattletag("Battletag is required")
-
-        print(self.battle_tag_check(battletag))
 
         if not self.battle_tag_check(battletag):
             raise InvalidBattletag("Invalid battletag")
